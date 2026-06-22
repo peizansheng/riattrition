@@ -83,8 +83,8 @@ approximate the randomization distribution of the test statistic.}
 For example, if \code{tol = 10^(-3)}, then the confidence limits are precise up to 3 digits.}
 }
 \value{
-The one-sided or two-sided confidence interval for the maximum individual effect.
+The one-sided or two-sided confidence interval for the constant individual effect.
 }
 \description{
-\code{ci_sharp()} obtains one-sided or two-sided confidence interval for the maximum individual effect.
+\code{ci_sharp()} obtains one-sided or two-sided confidence interval for the constant individual effect.
 }

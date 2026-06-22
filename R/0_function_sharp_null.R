@@ -18,7 +18,7 @@
 #' # c(0.2, 0.4, 0.6, 0.8, 1.0)
 #' rank_score(n = 5, method.list = list(name = "Stephenson", s = 2))
 #' # c(0.00, 0.25, 0.50, 0.75, 1.00)
-#' @export
+#' @noRd
 rank_score <- function(n, method.list = list(name = "Wilcoxon")) {
   if (method.list$name == "Wilcoxon") {
     score <- c(1:n)
@@ -44,7 +44,7 @@ rank_score <- function(n, method.list = list(name = "Wilcoxon")) {
 #' Y <- c(1:4)
 #' rank_treat_relative_to_control(Z, Y)
 #' # c(0, 2)
-#' @export
+#' @noRd
 rank_treat_relative_to_control <- function(Z, Y) {
   r <- rank(Y, ties.method = "first")
   r1 <- rank(r[Z == 1])
@@ -63,7 +63,7 @@ rank_treat_relative_to_control <- function(Z, Y) {
 #' Y <- c(1:4)
 #' rank_control_relative_to_treat(Z, Y)
 #' # c(1, 1)
-#' @export
+#' @noRd
 rank_control_relative_to_treat <- function(Z, Y) {
   r <- rank(Y, ties.method = "first")
   r0 <- rank(r[Z == 0])
@@ -75,19 +75,8 @@ rank_control_relative_to_treat <- function(Z, Y) {
 #'
 #' `test_stat()` calculates two classes of rank-based test statistics.
 #'
-#' @param Z Treatment assignment (\eqn{n \times 1} vector).
+#' @inheritParams pval_sharp
 #' @param Y Realized outcome (\eqn{n \times 1} vector, no `NA`s).
-#' @param class A string that specifies the class of test statistic:
-#' * `class = "RS"` (first class, default): rank-sum statistic.
-#' * `class = "MWU+"` (second class): generalized Mann-Whitney U statistic,
-#' defined as the sum of relative ranks for treated units.
-#' * `class = "MWU-"` (second class): generalized Mann-Whitney U statistic,
-#' defined as the negative sum of relative ranks for control units.
-#' @param method.list A list that specifies the choice of test statistic:
-#' * if `class = "RS"`, `method.list` can be `list(name = "Wilcoxon")` or
-#' `list(name = "Stephenson", s = 10)`.
-#' * if `class = "MWU+"` or `class = "MWU-"`, `method.list` can be
-#' `list(name = "Wilcoxon")` or `list(name = "Polynomial", s = 10)`.
 #'
 #' @return A scalar.
 #' @examples
@@ -99,7 +88,7 @@ rank_control_relative_to_treat <- function(Z, Y) {
 #' test_stat(Z, Y, class = "MWU+", list(name = "Polynomial", s = 2)) # 6
 #' test_stat(Z, Y, class = "MWU-", list(name = "Wilcoxon")) # 0
 #' test_stat(Z, Y, class = "MWU-", list(name = "Polynomial", s = 2)) # 0
-#' @export
+#' @noRd
 test_stat <- function(Z, Y, class = "RS", method.list = list(name = "Wilcoxon")) {
   # Class 1: rank-sum statistics
   if (class == "RS") {
@@ -152,7 +141,7 @@ test_stat <- function(Z, Y, class = "RS", method.list = list(name = "Wilcoxon"))
 #' @return An \eqn{n \times nperm} matrix.
 #' @examples
 #' assign_CRE(n = 5, m = 3, nperm = 10^4)
-#' @export
+#' @noRd
 assign_CRE <- function(n, m, nperm) {
   Z.perm <- matrix(0, nrow = n, ncol = nperm)
   for (iter in 1:nperm) {
@@ -166,25 +155,13 @@ assign_CRE <- function(n, m, nperm) {
 #' `null_dist()` generates the null distribution of the given rank-based test
 #' statistic for an experiment with `m` treated out of `n` units.
 #'
+#' @inheritParams pval_sharp
 #' @param n A positive integer that specifies the number of units.
 #' @param m A positive integer that specifies the number of treated units.
-#' @param class A string that specifies the class of test statistic:
-#' * `class = "RS"` (first class, default): rank-sum statistic.
-#' * `class = "MWU+"` (second class): generalized Mann-Whitney U statistic,
-#' defined as the sum of relative ranks for treated units.
-#' * `class = "MWU-"` (second class): generalized Mann-Whitney U statistic,
-#' defined as the negative sum of relative ranks for control units.
-#' @param method.list A list that specifies the choice of test statistic:
-#' * if `class = "RS"`, `method.list` can be `list(name = "Wilcoxon")` or
-#' `list(name = "Stephenson", s = 10)`.
-#' * if `class = "MWU+"` or `class = "MWU-"`, `method.list` can be
-#' `list(name = "Wilcoxon")` or `list(name = "Polynomial", s = 10)`.
 #' @param Z.perm An \eqn{n \times nperm} matrix that specifies the permuted assignments
 #' for approximating the null distribution of the test statistic
 #' (\eqn{n} choose \eqn{m}).
 #' * if `Z.perm = NULL` (default), the function will calculate it internally.
-#' @param nperm A positive integer that specifies the number of permutations to
-#' approximate the randomization distribution of the test statistic.
 #'
 #' @return An \eqn{nperm \times 1} vector.
 #' @examples
@@ -200,7 +177,7 @@ assign_CRE <- function(n, m, nperm) {
 #'   n = 5, m = 3, class = "MWU-", method.list = list(name = "Wilcoxon"),
 #'   Z.perm = NULL, nperm = 10^4
 #' )
-#' @export
+#' @noRd
 null_dist <- function(n, m, class = "RS", method.list = list(name = "Wilcoxon"),
                       Z.perm = NULL, nperm = 10^4) {
   # Generate the Z.perm matrix
@@ -267,20 +244,7 @@ null_dist <- function(n, m, class = "RS", method.list = list(name = "Wilcoxon"),
 #' `pval_sharp_control()` obtains the p-value for testing the sharp null hypothesis
 #' \eqn{H_0: \tau = c}, using the worst-case imputed control potential outcomes \eqn{Y(0)}.
 #'
-#' @param Z Treatment assignment (\eqn{n \times 1} vector).
-#' @param Y Observed outcome (\eqn{n \times 1} vector, including `NA`s).
-#' @param c A scalar that specifies the sharp null hypothesis.
-#' @param class A string that specifies the class of test statistic:
-#' * `class = "RS"` (first class, default): rank-sum statistic.
-#' * `class = "MWU+"` (second class): generalized Mann-Whitney U statistic,
-#' defined as the sum of relative ranks for treated units.
-#' * `class = "MWU-"` (second class): generalized Mann-Whitney U statistic,
-#' defined as the negative sum of relative ranks for control units.
-#' @param method.list A list that specifies the choice of test statistic:
-#' * if `class = "RS"`, `method.list` can be `list(name = "Wilcoxon")` or
-#' `list(name = "Stephenson", s = 10)`.
-#' * if `class = "MWU+"` or `class = "MWU-"`, `method.list` can be
-#' `list(name = "Wilcoxon")` or `list(name = "Polynomial", s = 10)`.
+#' @inheritParams pval_sharp
 #' @param stat.null An \eqn{nperm \times 1} vector whose empirical distribution
 #' approximates the randomization distribution of the rank-based statistic
 #' (\eqn{n} choose \eqn{n_1}).
@@ -289,8 +253,6 @@ null_dist <- function(n, m, class = "RS", method.list = list(name = "Wilcoxon"),
 #' for approximating the null distribution of the test statistic
 #' (\eqn{n} choose \eqn{n_1}).
 #' * if `Z.perm = NULL` (default), the function will calculate it internally.
-#' @param nperm A positive integer that specifies the number of permutations to
-#' approximate the randomization distribution of the test statistic.
 #'
 #' @return The p-value for testing the specified sharp null hypothesis of interest.
 #' @examples
@@ -300,7 +262,7 @@ null_dist <- function(n, m, class = "RS", method.list = list(name = "Wilcoxon"),
 #'   c = 0, class = "RS", method.list = list(name = "Wilcoxon"),
 #'   stat.null = NULL, Z.perm = NULL, nperm = 10^4
 #' )
-#' @export
+#' @noRd
 pval_sharp_control <- function(Z, Y, c = 0, class = "RS", method.list = list(name = "Wilcoxon"),
                                stat.null = NULL, Z.perm = NULL, nperm = 10^4) {
   M <- as.numeric(!is.na(Y))
@@ -334,26 +296,13 @@ pval_sharp_control <- function(Z, Y, c = 0, class = "RS", method.list = list(nam
 #' `pval_sharp_composite()` obtains the p-value for testing the sharp null hypothesis
 #' \eqn{H_0: \tau = c}, using the worst-case imputed composite control potential outcome \eqn{Y_b(0)}.
 #'
-#' @param Z Treatment assignment (\eqn{n \times 1} vector).
-#' @param Y Observed outcome (\eqn{n \times 1} vector, including `NA`s).
-#' @param c A scalar that specifies the sharp null hypothesis.
+#' @inheritParams pval_sharp
 #' @param b00,b01,b10 Three scalars that specifies the composite control potential outcome.
 #' @param missing A string that specifies the missing mechanism:
 #' * `missing = "general"`: general missing mechanism.
 #' * `missing = "mp"`: monotone positive missing mechanism (\eqn{M_1 \geq M_0}).
 #' * `missing = "mn"`: monotone negative missing mechanism (\eqn{M_1 \leq M_0}).
 #' * `missing = "sharp"`: sharp missing mechanism (\eqn{M_1 = M_0}).
-#' @param class A string that specifies the class of test statistic:
-#' * `class = "RS"` (first class, default): rank-sum statistic.
-#' * `class = "MWU+"` (second class): generalized Mann-Whitney U statistic,
-#' defined as the sum of relative ranks for treated units.
-#' * `class = "MWU-"` (second class): generalized Mann-Whitney U statistic,
-#' defined as the negative sum of relative ranks for control units.
-#' @param method.list A list that specifies the choice of test statistic:
-#' * if `class = "RS"`, `method.list` can be `list(name = "Wilcoxon")` or
-#' `list(name = "Stephenson", s = 10)`.
-#' * if `class = "MWU+"` or `class = "MWU-"`, `method.list` can be
-#' `list(name = "Wilcoxon")` or `list(name = "Polynomial", s = 10)`.
 #' @param stat.null An \eqn{nperm \times 1} vector whose empirical distribution
 #' approximates the randomization distribution of the rank-based statistic
 #' (\eqn{n} choose \eqn{n_1}).
@@ -362,8 +311,6 @@ pval_sharp_control <- function(Z, Y, c = 0, class = "RS", method.list = list(nam
 #' for approximating the null distribution of the test statistic
 #' (\eqn{n} choose \eqn{n_1}).
 #' * if `Z.perm = NULL` (default), the function will calculate it internally.
-#' @param nperm A positive integer that specifies the number of permutations to
-#' approximate the randomization distribution of the test statistic.
 #'
 #' @return The p-value for testing the specified sharp null hypothesis of interest.
 #' @examples
@@ -374,7 +321,7 @@ pval_sharp_control <- function(Z, Y, c = 0, class = "RS", method.list = list(nam
 #'   class = "RS", method.list = list(name = "Wilcoxon"),
 #'   stat.null = NULL, Z.perm = NULL, nperm = 10^4
 #' )
-#' @export
+#' @noRd
 pval_sharp_composite <- function(Z, Y, c = 0, b00, b01, b10, missing = "general",
                                  class = "RS", method.list = list(name = "Wilcoxon"),
                                  stat.null = NULL, Z.perm = NULL, nperm = 10^4) {
@@ -438,20 +385,7 @@ pval_sharp_composite <- function(Z, Y, c = 0, b00, b01, b10, missing = "general"
 #' missing outcomes, and perform usual randomization test with \eqn{n_{11}} treated
 #' and \eqn{n_{01}} control.
 #'
-#' @param Z Treatment assignment (\eqn{n \times 1} vector).
-#' @param Y Observed outcome (\eqn{n \times 1} vector, including `NA`s).
-#' @param c A scalar that specifies the sharp null hypothesis.
-#' @param class A string that specifies the class of test statistic:
-#' * `class = "RS"` (first class, default): rank-sum statistic.
-#' * `class = "MWU+"` (second class): generalized Mann-Whitney U statistic,
-#' defined as the sum of relative ranks for treated units.
-#' * `class = "MWU-"` (second class): generalized Mann-Whitney U statistic,
-#' defined as the negative sum of relative ranks for control units.
-#' @param method.list A list that specifies the choice of test statistic:
-#' * if `class = "RS"`, `method.list` can be `list(name = "Wilcoxon")` or
-#' `list(name = "Stephenson", s = 10)`.
-#' * if `class = "MWU+"` or `class = "MWU-"`, `method.list` can be
-#' `list(name = "Wilcoxon")` or `list(name = "Polynomial", s = 10)`.
+#' @inheritParams pval_sharp
 #' @param stat.null An \eqn{nperm \times 1} vector whose empirical distribution
 #' approximates the randomization distribution of the rank-based statistic
 #' (\eqn{n_{11} + n_{01}} choose \eqn{n_{11}}).
@@ -460,19 +394,17 @@ pval_sharp_composite <- function(Z, Y, c = 0, b00, b01, b10, missing = "general"
 #' for approximating the null distribution of the test statistic
 #' (\eqn{n_{11} + n_{01}} choose \eqn{n_{11}}).
 #' * if `Z.perm = NULL` (default), the function will calculate it internally.
-#' @param nperm A positive integer that specifies the number of permutations to
-#' approximate the randomization distribution of the test statistic.
 #'
 #' @return The p-value for testing the specified sharp null hypothesis of interest.
 #'
 #' @examples
 #' Z <- c(1, 1, 1, 0, 0, 0)
 #' Y <- c(NA, 8, 6, 3, 4, NA)
-#' pval_sharp_naive(Z, Y,
-#'   c = 0, class = "RS", method.list = list(name = "Wilcoxon"),
+#' pval_sharp_naive(Z, Y, c = 0, class = "RS",
+#'   method.list = list(name = "Wilcoxon"),
 #'   stat.null = NULL, Z.perm = NULL, nperm = 10^4
 #' )
-#' @export
+#' @noRd
 pval_sharp_naive <- function(Z, Y, c = 0, class = "RS", method.list = list(name = "Wilcoxon"),
                              stat.null = NULL, Z.perm = NULL, nperm = 10^4) {
   M <- as.numeric(!is.na(Y))
@@ -508,7 +440,7 @@ pval_sharp_naive <- function(Z, Y, c = 0, class = "RS", method.list = list(name 
 
 #' Confidence interval assuming constant treatment effect
 #'
-#' `ci_sharp_greater()` obtains one-sided confidence interval for the maximum individual effect.
+#' `ci_sharp_greater()` obtains one-sided confidence interval for the constant individual effect.
 #'
 #' @inheritParams pval_sharp
 #'
@@ -516,10 +448,12 @@ pval_sharp_naive <- function(Z, Y, c = 0, class = "RS", method.list = list(name 
 #' @param tol A numerical object that specifies the precision of the obtained confidence intervals.
 #' For example, if `tol = 10^(-3)`, then the confidence limits are precise up to 3 digits.
 #'
-#' @return The one-sided confidence interval for the maximum individual effect.
-#' @export
-ci_sharp_greater <- function(Z, Y, missing = "general", class = "RS", method.list = list(name = "Wilcoxon"),
-                             stat.null = NULL, Z.perm = NULL, nperm = 10^4, alpha = 0.05, tol = 10^(-3)) {
+#' @return The one-sided confidence interval for the constant individual effect.
+#' @noRd
+ci_sharp_greater <- function(Z, Y, missing = "general", class = "RS",
+                             method.list = list(name = "Wilcoxon"),
+                             stat.null = NULL, Z.perm = NULL, nperm = 10^4,
+                             alpha = 0.05, tol = 10^(-3)) {
   M <- as.numeric(!is.na(Y))
   n <- length(Z) # number of observations
   n1 <- sum(Z) # number of treated units
@@ -586,6 +520,74 @@ ci_sharp_greater <- function(Z, Y, missing = "general", class = "RS", method.lis
   return(c_sol)
 }
 
+#------------------ Helper Functions for Input Validation ---------------------#
+
+#' Check the validity of the input
+#'
+#' @inheritParams pval_sharp
+#'
+#' @noRd
+check_input <- function(Z, Y, missing, class, method.list, stat.null, Z.perm, nperm) {
+  if (is.null(Z) || !is.numeric(Z)) {
+    stop("`Z` must be a numeric vector for the treatment.")
+  }
+  if (anyNA(Z)) {
+    stop("`Z` must not contain missing values.")
+  }
+  if (!all(Z %in% c(0, 1))) {
+    stop("`Z` must contain only 0s and 1s.")
+  }
+  if (sum(Z == 1) == 0 || sum(Z == 0) == 0) {
+    stop("`Z` must contain at least one treated (1) and one control (0) unit.")
+  }
+
+  if (is.null(Y) || !is.numeric(Y)) {
+    stop("`Y` must be a numeric vector for the outcome")
+  }
+  if (all(is.na(Y))) {
+    stop("`Y` must contain at least one observed (non-NA) outcome.")
+  }
+  if (length(Y) != length(Z)) {
+    stop("`Y` and `Z` must have the same length.")
+  }
+
+  if (!(missing %in% c("general", "mp", "mn", "sharp", "random"))) {
+    stop("`missing` must be one of 'general', 'mp', 'mn', 'sharp', 'random'.")
+  }
+
+  if (!(class %in% c("RS", "MWU+", "MWU-"))) {
+    stop("`class` must be one of 'RS', 'MWU+', 'MWU-'.")
+  }
+
+  if (is.null(method.list) || !is.list(method.list) || is.null(method.list$name)) {
+    stop("`method.list` must be a list with a `name` element.")
+  }
+  if (class == "RS") {
+    if (!method.list$name %in% c("Wilcoxon", "Stephenson")) {
+      stop("For RS statistic, `method.list$name` must be one of 'Wilcoxon', 'Stephenson'.")
+    }
+  }
+  if (class %in% c("MWU+", "MWU-")) {
+    if (!method.list$name %in% c("Wilcoxon", "Polynomial")) {
+      stop("For MWU statistic, `method.list$name` must be one of 'Wilcoxon', 'Polynomial'.")
+    }
+  }
+
+  if (!is.null(stat.null) && !is.numeric(stat.null)) {
+    stop("`stat.null` must be a numeric vector or NULL.")
+  }
+
+  if (!is.null(Z.perm)) {
+    if (!is.matrix(Z.perm) || !is.numeric(Z.perm) || !all(Z.perm %in% c(0, 1))) {
+      stop("`Z.perm` must be a numeric 0/1 matrix or NULL.")
+    }
+  }
+
+  if (!is.numeric(nperm) || length(nperm) != 1L || !is.finite(nperm) || nperm < 1) {
+    stop("`nperm` must be a single positive integer.")
+  }
+}
+
 #------------------------------ Main Functions --------------------------------#
 
 #' Randomization test for sharp null hypotheses with missing outcomes
@@ -629,8 +631,13 @@ ci_sharp_greater <- function(Z, Y, missing = "general", class = "RS", method.lis
 #'
 #' @return The p-value for testing the specified sharp null hypothesis of interest.
 #' @export
-pval_sharp <- function(Z, Y, c = 0, missing = "general", class = "RS", method.list = list(name = "Wilcoxon"),
+pval_sharp <- function(Z, Y, c = 0, missing = "general", class = "RS",
+                       method.list = list(name = "Wilcoxon"),
                        stat.null = NULL, Z.perm = NULL, nperm = 10^4) {
+  check_input(
+    Z = Z, Y = Y, missing = missing, class = class, method.list = method.list,
+    stat.null = stat.null, Z.perm = Z.perm, nperm = nperm
+  )
   if (missing == "general") {
     pval <- pval_sharp_composite(
       Z = Z, Y = Y, c = c, b00 = 0, b01 = Inf, b10 = -Inf,
@@ -663,7 +670,7 @@ pval_sharp <- function(Z, Y, c = 0, missing = "general", class = "RS", method.li
 
 #' Confidence interval assuming constant treatment effect
 #'
-#' `ci_sharp()` obtains one-sided or two-sided confidence interval for the maximum individual effect.
+#' `ci_sharp()` obtains one-sided or two-sided confidence interval for the constant individual effect.
 #'
 #' @inheritParams pval_sharp
 #'
@@ -675,10 +682,16 @@ pval_sharp <- function(Z, Y, c = 0, missing = "general", class = "RS", method.li
 #' @param tol A numerical object that specifies the precision of the obtained confidence intervals.
 #' For example, if `tol = 10^(-3)`, then the confidence limits are precise up to 3 digits.
 #'
-#' @return The one-sided or two-sided confidence interval for the maximum individual effect.
+#' @return The one-sided or two-sided confidence interval for the constant individual effect.
 #' @export
-ci_sharp <- function(Z, Y, alternative, missing = "general", class = "RS", method.list = list(name = "Wilcoxon"),
-                     stat.null = NULL, Z.perm = NULL, nperm = 10^4, alpha = 0.05, tol = 10^(-3)) {
+ci_sharp <- function(Z, Y, alternative, missing = "general", class = "RS",
+                     method.list = list(name = "Wilcoxon"),
+                     stat.null = NULL, Z.perm = NULL, nperm = 10^4,
+                     alpha = 0.05, tol = 10^(-3)) {
+  check_input(
+    Z = Z, Y = Y, missing = missing, class = class, method.list = method.list,
+    stat.null = stat.null, Z.perm = Z.perm, nperm = nperm
+  )
   if (alternative == "greater") {
     ci.lower <- ci_sharp_greater(
       Z = Z, Y = Y, missing = missing, class = class,

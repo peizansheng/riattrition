@@ -2,3 +2,10 @@
 data-raw/trimdata1.dta
 data-raw/trimdata2.dta
 data-raw/trimdata3.dta
+.DS_Store
+.Rhistory
+.RData
+.Rapp.history
+.Ruserdata
+*.tar.gz
+*.Rcheck/

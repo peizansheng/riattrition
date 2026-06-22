@@ -11,6 +11,9 @@
 library(haven)
 library(tidyverse)
 jc <- read_dta("data-raw/trimdata3.dta")
+jc <- jc %>%
+  zap_label() %>%
+  as.data.frame()
 
 jc_treat <- jc %>%
   group_by(mprid) %>%
@@ -34,5 +37,4 @@ lee2009 <- jc_wide %>%
     ~ ifelse(is.nan(.) | is.infinite(.), NA, .)
   ))
 
-usethis::use_data(lee2009, overwrite = TRUE)
-
+usethis::use_data(lee2009, overwrite = TRUE, compress = "xz")
