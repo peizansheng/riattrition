@@ -6,8 +6,8 @@
 #'
 #' `lci()` generates the lower limit of the one-sided \eqn{1 - \alpha} CP interval.
 #' Consider hypergeometric with \eqn{N} units, \eqn{M} of them are good,
-#' \eqn{N - M} are bad, select \eqn{n} from \eqn{N} units, there are \eqn{x} 
-#' good units in the sample. 
+#' \eqn{N - M} are bad, select \eqn{n} from \eqn{N} units, there are \eqn{x}
+#' good units in the sample.
 #' P(X = x) = dhyper(x, M, N - M, n) for max(0, n + M - N) <= x <= min(n, M).
 #' Here, \eqn{n} and \eqn{N} are known, and we want to estimate \eqn{M} based on \eqn{x}.
 #' Source: "Exact Optimal Confidence Intervals for Hypergeometric Parameters"
@@ -23,6 +23,10 @@
 #' lci(N = 100, x = 50, n = 50, alpha = 0.1)
 #' @noRd
 lci <- function(N, x, n, alpha) {
+  # alpha = 0 gives the trivial bound x
+  if (alpha == 0) {
+    return(x)
+  }
   kk <- 1:length(x)
   for (i in kk) {
     if (x[i] < 0.5) {
@@ -47,8 +51,8 @@ lci <- function(N, x, n, alpha) {
 #'
 #' `uci()` generates the upper limit of the one-sided \eqn{1 - \alpha} CP interval.
 #' Consider hypergeometric with \eqn{N} units, \eqn{M} of them are good,
-#' \eqn{N - M} are bad, select \eqn{n} from \eqn{N} units, there are \eqn{x} 
-#' good units in the sample. 
+#' \eqn{N - M} are bad, select \eqn{n} from \eqn{N} units, there are \eqn{x}
+#' good units in the sample.
 #' P(X = x) = dhyper(x, M, N - M, n) for max(0, n + M - N) <= x <= min(n, M).
 #' Here, \eqn{n} and \eqn{N} are known, and we want to estimate \eqn{M} based on \eqn{x}.
 #' Source: "Exact Optimal Confidence Intervals for Hypergeometric Parameters"
@@ -71,8 +75,8 @@ uci <- function(N, x, n, alpha) {
 #'
 #' `exactci()` generates the two-sided \eqn{1 - \alpha} CP interval.
 #' Consider hypergeometric with \eqn{N} units, \eqn{M} of them are good,
-#' \eqn{N - M} are bad, select \eqn{n} from \eqn{N} units, there are \eqn{x} 
-#' good units in the sample. 
+#' \eqn{N - M} are bad, select \eqn{n} from \eqn{N} units, there are \eqn{x}
+#' good units in the sample.
 #' P(X = x) = dhyper(x, M, N - M, n) for max(0, n + M - N) <= x <= min(n, M).
 #' Here, \eqn{n} and \eqn{N} are known, and we want to estimate \eqn{M} based on \eqn{x}.
 #' Source: "Exact Optimal Confidence Intervals for Hypergeometric Parameters"
@@ -269,10 +273,6 @@ pval_sharp_g_twostep_old <- function(
   ind.treat.obs <- which(Z == 1 & M == 1) # n11 x 1 vector
   ind.treat.miss <- which(Z == 1 & M == 0) # n10 x 1 vector
 
-  r <- rank(Y, ties.method = "first") # n x 1 vector
-  ind.sort <- sort.int(r, index.return = TRUE)$ix # n x 1 vector
-  ind.sort.control.obs <- ind.sort[Z[ind.sort] == 0 & M[ind.sort] == 1] # n01 x 1 vector
-
   # rank transformation
   if (method.list$name == "Wilcoxon") {
     phi <- function(x) {
@@ -294,26 +294,9 @@ pval_sharp_g_twostep_old <- function(
   B_J_precompute_10 <- findInterval(ind.treat.miss, ind.control.obs)
 
   # Precompute B_J for observed treated units (n11 x (n01 + 1) matrix)
-  # sum_{j in F_J} psi(i,j,Y_i-c,Y_j) + (n01 - J)
-  if (n11 > 0 & n01 > 0) {
-    # psi_mat stores all pairwise psi-values between treated observed units and control observed units
-    psi_mat <- matrix(0, nrow = n11, ncol = n01) # n11 x n01 matrix
-
-    for (a in 1:n11) {
-      i <- ind.treat.obs[a]
-      for (b in 1:n01) {
-        j <- ind.sort.control.obs[b]
-        psi_mat[a, b] <- psi(i, j, Y[i] - c, Y[j])
-      }
-    }
-
-    # B_J_precompute_11[a, J+1] = sum of psi_mat[a, last J columns]
-    B_J_precompute_11 <- matrix(0, nrow = n11, ncol = n01 + 1)
-    psi_rev <- psi_mat[, n01:1, drop = FALSE]
-    B_J_precompute_11[, 2:(n01 + 1)] <- t(apply(psi_rev, 1, cumsum))
-  } else {
-    B_J_precompute_11 <- matrix(0, nrow = n11, ncol = n01 + 1)
-  }
+  # sum_{j in F_J} psi(i,j,Y_i-c,Y_j) + (n01 - J); (n01 - J) is added later
+  R <- rank_treat_relative_to_control(Z[M == 1], (Y - Z * c)[M == 1]) # n11 x 1 vector
+  B_J_precompute_11 <- outer(R, 0:n01, function(r, J) pmax(0, r - (n01 - J)))
 
   Klbar <- max(0, mlbar - n10)
   Kubar <- min(n11, mubar)
@@ -540,7 +523,7 @@ pval_sharp_mn_twostep <- function(
 
 #' Confidence interval assuming constant treatment effect
 #'
-#' `ci_sharp_greater_twostep()` obtains the lower limit of the one-sided confidence interval 
+#' `ci_sharp_greater_twostep()` obtains the lower limit of the one-sided confidence interval
 #' for the constant individual effect.
 #'
 #' @inheritParams pval_sharp_twostep
@@ -554,7 +537,7 @@ pval_sharp_mn_twostep <- function(
 ci_sharp_greater_twostep <- function(
   Z, Y, missing = "general", method.list = list(name = "Wilcoxon"),
   stat.null = NULL, Z.perm = NULL, nperm = 10^4,
-  alpha = 0.05, beta = 0.1 * 0.05, tol = 10^(-3)
+  alpha = 0.05, beta = 0.1 * alpha, tol = 10^(-3)
 ) {
   M <- as.numeric(!is.na(Y))
   n <- length(Z) # number of observations
@@ -566,13 +549,6 @@ ci_sharp_greater_twostep <- function(
   if (missing == "mn") {
     class <- "MWU-"
   }
-
-  # Generate Z.perm as a matrix of possible treatment assignments with nperm combinations
-  if (is.null(Z.perm)) {
-    Z.perm <- assign_CRE(n, n1, nperm)
-  }
-  nperm <- ncol(Z.perm)
-  # Z.perm: n x nperm matrix in which each column is one permutation of treatment assignment.
 
   # Calculate the test statistic for each treatment assignment permutation
   # As nperm -> infinity, stat.null can approximate to the null distribution G0()
@@ -586,7 +562,7 @@ ci_sharp_greater_twostep <- function(
   f <- function(c) {
     pval <- pval_sharp_twostep(
       Z = Z, Y = Y, c = c, missing = missing, method.list = method.list,
-      stat.null = stat.null, Z.perm = Z.perm, nperm = nperm, beta = beta
+      stat.null = stat.null, Z.perm = NULL, nperm = nperm, beta = beta
     )
     return(pval - alpha)
   }
@@ -626,7 +602,7 @@ ci_sharp_greater_twostep <- function(
 #'
 #' @noRd
 check_input_pval_sharp_twostep <- function(
-  Z, Y, missing, method.list, stat.null, Z.perm, nperm, beta
+  Z, Y, c, missing, method.list, stat.null, Z.perm, nperm, beta
 ) {
   if (is.null(Z) || !is.numeric(Z)) {
     stop("`Z` must be a numeric vector for the treatment.")
@@ -640,7 +616,7 @@ check_input_pval_sharp_twostep <- function(
   if (sum(Z == 1) == 0 || sum(Z == 0) == 0) {
     stop("`Z` must contain at least one treated (1) and one control (0) unit.")
   }
-  
+
   if (is.null(Y) || !is.numeric(Y)) {
     stop("`Y` must be a numeric vector for the outcome.")
   }
@@ -650,11 +626,15 @@ check_input_pval_sharp_twostep <- function(
   if (length(Y) != length(Z)) {
     stop("`Y` and `Z` must have the same length.")
   }
-  
+
+  if (!is.numeric(c) || !(length(c) == 1) || !is.finite(c)) {
+    stop("`c` must be a finite number.")
+  }
+
   if (!(missing %in% c("general", "mp", "mn"))) {
     stop("`missing` must be one of 'general', 'mp', 'mn'.")
   }
-  
+
   if (is.null(method.list) || !is.list(method.list) || is.null(method.list$name)) {
     stop("`method.list` must be a list with a `name` element.")
   }
@@ -668,21 +648,21 @@ check_input_pval_sharp_twostep <- function(
       stop("`method.list$s` must be a number >= 1 for 'Polynomial'.")
     }
   }
-  
+
   if (!is.null(stat.null) && !is.numeric(stat.null)) {
     stop("`stat.null` must be a numeric vector or NULL.")
   }
-  
+
   if (!is.null(Z.perm)) {
     if (!is.matrix(Z.perm) || !is.numeric(Z.perm) || !all(Z.perm %in% c(0, 1))) {
       stop("`Z.perm` must be a numeric 0/1 matrix or NULL.")
     }
   }
-  
+
   if (!is.numeric(nperm) || length(nperm) != 1 || !is.finite(nperm) || nperm < 1) {
     stop("`nperm` must be a single positive integer.")
   }
-  
+
   if (!is.numeric(beta) || length(beta) != 1 || is.na(beta) || beta < 0 || beta >= 1) {
     stop("`beta` must be a single number in [0, 1).")
   }
@@ -694,11 +674,11 @@ check_input_pval_sharp_twostep <- function(
 #'
 #' @noRd
 check_input_ci_sharp_twostep <- function(
-  Z, Y, alternative, missing, method.list, 
+  Z, Y, alternative, missing, method.list,
   stat.null, Z.perm, nperm, alpha, beta, tol
 ) {
   check_input_pval_sharp_twostep(
-    Z = Z, Y = Y, missing = missing, method.list = method.list,
+    Z = Z, Y = Y, c = 0, missing = missing, method.list = method.list,
     stat.null = stat.null, Z.perm = Z.perm, nperm = nperm, beta = beta
   )
   if (!(alternative %in% c("greater", "less", "two.sided"))) {
@@ -738,7 +718,8 @@ check_input_ci_sharp_twostep <- function(
 #' * if `Z.perm = NULL` (default), the function will calculate it internally.
 #' @param nperm A positive integer that specifies the number of permutations to
 #' approximate the randomization distribution of the test statistic.
-#' @param beta A real number that belongs to \eqn{[0, \alpha]}.
+#' @param beta A real number that belongs to \eqn{[0, \alpha]}, where \eqn{\alpha}
+#' is the significance level. The paper recommends \eqn{\beta = 0.1 \alpha}.
 #' @return The p-value for testing the specified sharp null hypothesis of interest.
 #' @export
 pval_sharp_twostep <- function(
@@ -746,24 +727,24 @@ pval_sharp_twostep <- function(
   stat.null = NULL, Z.perm = NULL, nperm = 10^4, beta
 ) {
   check_input_pval_sharp_twostep(
-    Z = Z, Y = Y, missing = missing, method.list = method.list,
+    Z = Z, Y = Y, c = c, missing = missing, method.list = method.list,
     stat.null = stat.null, Z.perm = Z.perm, nperm = nperm, beta = beta
   )
   if (missing == "general") {
     return(pval_sharp_g_twostep(
-      Z = Z, Y = Y, c = c, method.list = method.list, 
+      Z = Z, Y = Y, c = c, method.list = method.list,
       stat.null = stat.null, Z.perm = Z.perm, nperm = nperm, beta = beta
     ))
   }
   if (missing == "mp") {
     return(pval_sharp_mp_twostep(
-      Z = Z, Y = Y, c = c, method.list = method.list, 
+      Z = Z, Y = Y, c = c, method.list = method.list,
       stat.null = stat.null, Z.perm = Z.perm, nperm = nperm, beta = beta
     ))
   }
   if (missing == "mn") {
     return(pval_sharp_mn_twostep(
-      Z = Z, Y = Y, c = c, method.list = method.list, 
+      Z = Z, Y = Y, c = c, method.list = method.list,
       stat.null = stat.null, Z.perm = Z.perm, nperm = nperm, beta = beta
     ))
   }
@@ -771,7 +752,7 @@ pval_sharp_twostep <- function(
 
 #' Confidence interval assuming constant treatment effect
 #'
-#' `ci_sharp_twostep()` obtains a one-sided or two-sided confidence interval for 
+#' `ci_sharp_twostep()` obtains a one-sided or two-sided confidence interval for
 #' the constant individual effect.
 #'
 #' @inheritParams pval_sharp_twostep
@@ -784,7 +765,7 @@ pval_sharp_twostep <- function(
 #' @param tol A numerical object that specifies the precision of the obtained confidence intervals.
 #' For example, if `tol = 10^(-3)`, then the confidence limits are precise up to 3 digits.
 #'
-#' @return The one-sided or two-sided confidence interval for the constant 
+#' @return The one-sided or two-sided confidence interval for the constant
 #' individual effect.
 #' * if `alternative = "greater"`, return the lower limit (a scalar).
 #' * if `alternative = "less"`, return the upper limit (a scalar).
@@ -793,7 +774,7 @@ pval_sharp_twostep <- function(
 ci_sharp_twostep <- function(
   Z, Y, alternative, missing = "general", method.list = list(name = "Wilcoxon"),
   stat.null = NULL, Z.perm = NULL, nperm = 10^4,
-  alpha = 0.05, beta = 0.1 * 0.05, tol = 10^(-3)
+  alpha = 0.05, beta = 0.1 * alpha, tol = 10^(-3)
 ) {
   check_input_ci_sharp_twostep(
     Z = Z, Y = Y, alternative = alternative, missing = missing, method.list = method.list,
@@ -832,7 +813,7 @@ sens_pval_sharp_mp_twostep <- function(
   stat.null = NULL, Z.perm = NULL, nperm = 10^4, beta
 ) {
   check_input_pval_sharp_twostep(
-    Z = Z, Y = Y, missing = "general", method.list = method.list,
+    Z = Z, Y = Y, c = c, missing = "general", method.list = method.list,
     stat.null = stat.null, Z.perm = Z.perm, nperm = nperm, beta = beta
   )
   M <- as.numeric(!is.na(Y))
@@ -869,10 +850,6 @@ sens_pval_sharp_mp_twostep <- function(
   ind.treat.obs <- which(Z == 1 & M == 1) # n11 x 1 vector
   ind.treat.miss <- which(Z == 1 & M == 0) # n10 x 1 vector
 
-  r <- rank(Y, ties.method = "first") # n x 1 vector
-  ind.sort <- sort.int(r, index.return = TRUE)$ix # n x 1 vector
-  ind.sort.control.obs <- ind.sort[Z[ind.sort] == 0 & M[ind.sort] == 1] # n01 x 1 vector
-
   # rank transformation
   if (method.list$name == "Wilcoxon") {
     phi <- function(x) {
@@ -894,25 +871,35 @@ sens_pval_sharp_mp_twostep <- function(
   B_J_precompute_10 <- findInterval(ind.treat.miss, ind.control.obs)
 
   # Precompute B_J for observed treated units (n11 x (n01 + 1) matrix)
-  # sum_{j in F_J} psi(i,j,Y_i-c,Y_j) + (n01 - J)
-  if (n11 > 0 & n01 > 0) {
-    # psi_mat stores all pairwise psi-values between treated observed units and control observed units
-    psi_mat <- matrix(0, nrow = n11, ncol = n01) # n11 x n01 matrix
+  # sum_{j in F_J} psi(i,j,Y_i-c,Y_j) + (n01 - J); (n01 - J) is added later
+  R <- rank_treat_relative_to_control(Z[M == 1], (Y - Z * c)[M == 1]) # n11 x 1 vector
+  B_J_precompute_11 <- outer(R, 0:n01, function(r, J) pmax(0, r - (n01 - J)))
 
-    for (a in 1:n11) {
-      i <- ind.treat.obs[a]
-      for (b in 1:n01) {
-        j <- ind.sort.control.obs[b]
-        psi_mat[a, b] <- psi(i, j, Y[i] - c, Y[j])
-      }
+  # Precompute B_J and C_J once per J
+  T_parts <- lapply(0:n01, function(J) {
+    B_J <- rep(NA, n) # n x 1 vector (where n1 elements are non NAs)
+    if (n11 > 0) {
+      B_J[ind.treat.obs] <- B_J_precompute_11[, J + 1] + (n01 - J)
     }
+    if (n10 > 0) {
+      B_J[ind.treat.miss] <- pmax(0, B_J_precompute_10 - J)
+    }
+    C_J <- phi(A) - phi(B_J) # n x 1 vector (where n1 elements are non NAs)
+    list(
+      B_J = B_J,
+      C_J = C_J,
+      C_J1 = sort(C_J[ind.treat.obs]), # C_{J1(1)} <= ... <= C_{J1(n11)}
+      C_J0 = sort(C_J[ind.treat.miss]) # C_{J0(1)} <= ... <= C_{J0(n10)}
+    )
+  })
 
-    # B_J_precompute_11[a, J+1] = sum of psi_mat[a, last J columns]
-    B_J_precompute_11 <- matrix(0, nrow = n11, ncol = n01 + 1)
-    psi_rev <- psi_mat[, n01:1, drop = FALSE]
-    B_J_precompute_11[, 2:(n01 + 1)] <- t(apply(psi_rev, 1, cumsum))
-  } else {
-    B_J_precompute_11 <- matrix(0, nrow = n11, ncol = n01 + 1)
+  # Calculate the test statistic for each treatment assignment permutation
+  # As nperm -> infinity, stat.null can approximate to the null distribution G0()
+  if (is.null(stat.null)) {
+    stat.null <- null_dist(
+      n, n1, class = "MWU+", method.list = method.list,
+      Z.perm = Z.perm, nperm = nperm
+    )
   }
 
   pval_df <- data.frame(m10 = 0:n, pval = rep(NA, n + 1))
@@ -932,32 +919,14 @@ sens_pval_sharp_mp_twostep <- function(
       for (L in Llbar:Lubar) {
         J <- n01 - (m10 - L)
         K <- min(n11, mubar - L)
-
-        # Calculate B_Ji for treated units
-        B_J <- rep(NA, n) # n x 1 vector (where n1 elements are non NAs)
-        if (n11 > 0) {
-          B_J[ind.treat.obs] <- B_J_precompute_11[, J + 1] + (n01 - J)
-        }
-        if (n10 > 0) {
-          B_J[ind.treat.miss] <- pmax(0, B_J_precompute_10 - J)
-        }
-        C_J <- phi(A) - phi(B_J) # n x 1 vector (where n1 elements are non NAs)
-        r_C <- rank(C_J, ties.method = "first") # n x 1 vector
-        ind.sort.C <- sort.int(r_C, index.return = TRUE)$ix # n x 1 vector
-        ind.sort.C.treat.obs <- ind.sort.C[Z[ind.sort.C] == 1 & M[ind.sort.C] == 1] # n11 x 1 vector
-        ind.sort.C.treat.miss <- ind.sort.C[Z[ind.sort.C] == 1 & M[ind.sort.C] == 0] # n10 x 1 vector
-        TL_vec[L - Llbar + 1] <- sum(phi(B_J)[Z == 1]) + sum(C_J[ind.sort.C.treat.obs[seq_len(n11 - K)]]) + sum(C_J[ind.sort.C.treat.miss[seq_len(n10 - L)]])
+        B_J <- T_parts[[J + 1]]$B_J
+        C_J <- T_parts[[J + 1]]$C_J
+        C_J1 <- T_parts[[J + 1]]$C_J1 # C_{J1(1)} <= ... <= C_{J1(n11)}
+        C_J0 <- T_parts[[J + 1]]$C_J0 # C_{J0(1)} <= ... <= C_{J0(n10)}
+        # T(K, L, J)
+        TL_vec[L - Llbar + 1] <- sum(phi(B_J)[Z == 1]) + sum(C_J1[seq_len(n11 - K)]) + sum(C_J0[seq_len(n10 - L)])
       }
       TL_min <- min(TL_vec)
-    }
-
-    # Calculate the test statistic for each treatment assignment permutation
-    # As nperm -> infinity, stat.null can approximate to the null distribution G0()
-    if (is.null(stat.null)) {
-      stat.null <- null_dist(
-        n, n1, class = "MWU+", method.list = method.list,
-        Z.perm = Z.perm, nperm = nperm
-      )
     }
 
     # Calculate the observed test statistic

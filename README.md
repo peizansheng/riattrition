@@ -132,4 +132,5 @@ the usage of the main functions.
 Z <- chen_and_yang_2019$treatment_vpnnl
 Y <- chen_and_yang_2019$az_overall_a_w3
 result <- application_wrapper(Z = Z, Y = Y, seed = 1)
+make_latex_table(result.list = list(result1 = result))
 ```

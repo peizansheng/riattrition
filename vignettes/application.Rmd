@@ -41,10 +41,9 @@ plot_sens(sens_pval = result.list$week90$sens_pval, output_file = "application_l
 Z <- chen_and_yang_2019$treatment_vpnnl
 Y <- chen_and_yang_2019$az_overall_a_w3
 result <- application_wrapper(Z = Z, Y = Y, seed = 1)
-result.list <- list(result1 = result)
 
 # Generate LaTex table for p-value and CI
-make_latex_table(result.list)
+make_latex_table(result.list = list(result1 = result))
 
 # Draw the sensitivity analysis plot
 plot_sens(sens_pval = result$sens_pval, output_file = "application_chen_and_yang_2019_sens.pdf")
@@ -56,10 +55,9 @@ plot_sens(sens_pval = result$sens_pval, output_file = "application_chen_and_yang
 Z <- bursztyn_et_al_2020$condition2
 Y <- bursztyn_et_al_2020$klk_index
 result <- application_wrapper(Z = Z, Y = Y, seed = 1)
-result.list <- list(result1 = result)
 
 # Generate LaTex table for p-value and CI
-make_latex_table(result.list)
+make_latex_table(result.list = list(result1 = result))
 
 # Draw the sensitivity analysis plot
 plot_sens(sens_pval = result$sens_pval, output_file = "application_bursztyn_et_al_2020_sens.pdf")

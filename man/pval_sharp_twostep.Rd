@@ -50,7 +50,8 @@ for approximating the null distribution of the test statistic
 \item{nperm}{A positive integer that specifies the number of permutations to
 approximate the randomization distribution of the test statistic.}
 
-\item{beta}{A real number that belongs to \eqn{[0, \alpha]}.}
+\item{beta}{A real number that belongs to \eqn{[0, \alpha]}, where \eqn{\alpha}
+is the significance level. The paper recommends \eqn{\beta = 0.1 \alpha}.}
 }
 \value{
 The p-value for testing the specified sharp null hypothesis of interest.

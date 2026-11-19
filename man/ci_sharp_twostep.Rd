@@ -14,7 +14,7 @@ ci_sharp_twostep(
   Z.perm = NULL,
   nperm = 10^4,
   alpha = 0.05,
-  beta = 0.1 * 0.05,
+  beta = 0.1 * alpha,
   tol = 10^(-3)
 )
 }
@@ -59,7 +59,8 @@ approximate the randomization distribution of the test statistic.}
 
 \item{alpha}{A scalar, where \eqn{1-\alpha} indicates the confidence level.}
 
-\item{beta}{A real number that belongs to \eqn{[0, \alpha]}.}
+\item{beta}{A real number that belongs to \eqn{[0, \alpha]}, where \eqn{\alpha}
+is the significance level. The paper recommends \eqn{\beta = 0.1 \alpha}.}
 
 \item{tol}{A numerical object that specifies the precision of the obtained confidence intervals.
 For example, if \code{tol = 10^(-3)}, then the confidence limits are precise up to 3 digits.}

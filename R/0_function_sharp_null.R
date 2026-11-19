@@ -57,7 +57,7 @@ rank_treat_relative_to_control <- function(Z, Y) {
 #' @param Z Treatment assignment (\eqn{n \times 1} vector).
 #' @param Y Realized outcome (\eqn{n \times 1} vector, no `NA`s).
 #'
-#' @return A \eqn{n_0 \times 1} vector.
+#' @return An \eqn{n_0 \times 1} vector.
 #' @examples
 #' Z <- c(1, 0, 0, 1)
 #' Y <- c(1:4)
@@ -145,7 +145,7 @@ test_stat <- function(Z, Y, class = "RS", method.list = list(name = "Wilcoxon"))
 assign_CRE <- function(n, m, nperm) {
   Z.perm <- matrix(0, nrow = n, ncol = nperm)
   for (iter in 1:nperm) {
-    Z.perm[sample(c(1:n), m, replace = FALSE), iter] <- 1
+    Z.perm[sample.int(n, m), iter] <- 1
   }
   return(Z.perm)
 }
@@ -158,7 +158,7 @@ assign_CRE <- function(n, m, nperm) {
 #' @inheritParams pval_sharp
 #' @param n A positive integer that specifies the number of units.
 #' @param m A positive integer that specifies the number of treated units.
-#' @param Z.perm An \eqn{n \times nperm} matrix that specifies the permuted 
+#' @param Z.perm An \eqn{n \times nperm} matrix that specifies the permuted
 #' assignments for approximating the null distribution of the test statistic
 #' (\eqn{n} choose \eqn{m}).
 #' * if `Z.perm = NULL` (default), the function will calculate it internally.
@@ -241,7 +241,7 @@ null_dist <- function(n, m, class = "RS", method.list = list(name = "Wilcoxon"),
 #' Randomization test for sharp null hypotheses with missing outcomes
 #'
 #' `pval_sharp_control()` obtains the p-value for testing the sharp null hypothesis
-#' \eqn{H_0: \tau = c}, using the worst-case imputed control potential outcomes 
+#' \eqn{H_0: \tau = c}, using the worst-case imputed control potential outcomes
 #' \eqn{Y(0)}.
 #'
 #' @inheritParams pval_sharp
@@ -249,7 +249,7 @@ null_dist <- function(n, m, class = "RS", method.list = list(name = "Wilcoxon"),
 #' approximates the randomization distribution of the rank-based statistic
 #' (\eqn{n} choose \eqn{n_1}).
 #' * if `stat.null = NULL` (default), the function will calculate it internally.
-#' @param Z.perm An \eqn{n \times nperm} matrix that specifies the permuted 
+#' @param Z.perm An \eqn{n \times nperm} matrix that specifies the permuted
 #' assignments for approximating the null distribution of the test statistic
 #' (\eqn{n} choose \eqn{n_1}).
 #' * if `Z.perm = NULL` (default), the function will calculate it internally.
@@ -272,7 +272,6 @@ pval_sharp_control <- function(
   n1 <- sum(Z) # number of treated units
 
   # Impute the potential outcome if null hypothesis H0: tau = c is true
-  Y1.imp <- Y + (1 - Z) * c
   Y0.imp <- Y - Z * c
 
   # Impute the worst-case control potential outcome Y0
@@ -301,7 +300,7 @@ pval_sharp_control <- function(
 #' Randomization test for sharp null hypotheses with missing outcomes
 #'
 #' `pval_sharp_composite()` obtains the p-value for testing the sharp null hypothesis
-#' \eqn{H_0: \tau = c}, using the worst-case imputed composite control potential outcome 
+#' \eqn{H_0: \tau = c}, using the worst-case imputed composite control potential outcome
 #' \eqn{Y_b(0)}.
 #'
 #' @inheritParams pval_sharp
@@ -315,7 +314,7 @@ pval_sharp_control <- function(
 #' approximates the randomization distribution of the rank-based statistic
 #' (\eqn{n} choose \eqn{n_1}).
 #' * if `stat.null = NULL` (default), the function will calculate it internally.
-#' @param Z.perm An \eqn{n \times nperm} matrix that specifies the permuted 
+#' @param Z.perm An \eqn{n \times nperm} matrix that specifies the permuted
 #' assignments for approximating the null distribution of the test statistic
 #' (\eqn{n} choose \eqn{n_1}).
 #' * if `Z.perm = NULL` (default), the function will calculate it internally.
@@ -340,7 +339,6 @@ pval_sharp_composite <- function(
   n1 <- sum(Z) # number of treated units
 
   # Impute the potential outcome if null hypothesis H0: tau = c is true
-  Y1.imp <- Y + (1 - Z) * c
   Y0.imp <- Y - Z * c
 
   # Impute the worst-case composite control potential outcome
@@ -396,8 +394,8 @@ pval_sharp_composite <- function(
 #' Randomization test for sharp null hypotheses with missing outcomes
 #'
 #' `pval_sharp_naive()` obtains the p-value for testing the sharp null hypothesis
-#' \eqn{H_0: \tau = c} using the naive approach. Implement CRE for only units 
-#' with observed outcomes, and perform the usual randomization test with 
+#' \eqn{H_0: \tau = c} using the naive approach. Implement CRE for only units
+#' with observed outcomes, and perform the usual randomization test with
 #' \eqn{n_{11}} treated and \eqn{n_{01}} control.
 #'
 #' @inheritParams pval_sharp
@@ -405,7 +403,7 @@ pval_sharp_composite <- function(
 #' approximates the randomization distribution of the rank-based statistic
 #' (\eqn{n_{11} + n_{01}} choose \eqn{n_{11}}).
 #' * if `stat.null = NULL` (default), the function will calculate it internally.
-#' @param Z.perm An \eqn{(n_{11} + n_{01}) \times nperm} matrix that specifies 
+#' @param Z.perm An \eqn{(n_{11} + n_{01}) \times nperm} matrix that specifies
 #' the permuted assignments for approximating the null distribution of the test statistic
 #' (\eqn{n_{11} + n_{01}} choose \eqn{n_{11}}).
 #' * if `Z.perm = NULL` (default), the function will calculate it internally.
@@ -425,15 +423,11 @@ pval_sharp_naive <- function(
   stat.null = NULL, Z.perm = NULL, nperm = 10^4
 ) {
   M <- as.numeric(!is.na(Y))
-  n <- length(Z) # number of observations
-  n1 <- sum(Z) # number of treated units
 
   # Impute the potential outcome if null hypothesis H0: tau = c is true
-  Y1.imp <- Y + (1 - Z) * c
   Y0.imp <- Y - Z * c
 
   # Drop missing data
-  Y1.imp.obs <- Y1.imp[M == 1]
   Y0.imp.obs <- Y0.imp[M == 1]
   Z.obs <- Z[M == 1]
 
@@ -462,14 +456,14 @@ pval_sharp_naive <- function(
 
 #' Confidence interval assuming constant treatment effect
 #'
-#' `ci_sharp_greater()` obtains the lower limit of the one-sided confidence interval 
+#' `ci_sharp_greater()` obtains the lower limit of the one-sided confidence interval
 #' for the constant individual effect.
 #'
 #' @inheritParams pval_sharp
 #'
 #' @param alpha A scalar, where \eqn{1-\alpha} indicates the confidence level.
-#' @param tol A numerical object that specifies the precision of the obtained 
-#' confidence intervals. For example, if `tol = 10^(-3)`, then the confidence 
+#' @param tol A numerical object that specifies the precision of the obtained
+#' confidence intervals. For example, if `tol = 10^(-3)`, then the confidence
 #' limits are precise up to 3 digits.
 #'
 #' @return The lower confidence limit for the constant individual effect.
@@ -485,19 +479,6 @@ ci_sharp_greater <- function(
   Z.obs <- Z[M == 1]
   n.obs <- length(Z.obs) # n11 + n01
   n1.obs <- sum(Z.obs) # n11
-
-  # Generate Z.perm as a matrix of possible treatment assignments with nperm combinations
-  if (is.null(Z.perm)) {
-    if (missing %in% c("general", "mp", "mn")) {
-      Z.perm <- assign_CRE(n, n1, nperm)
-    }
-    if (missing %in% c("sharp", "random")) {
-      Z.perm <- assign_CRE(n.obs, n1.obs, nperm)
-    }
-  }
-  nperm <- ncol(Z.perm)
-  # Z.perm: n x nperm or n.obs x nperm matrix in which each column is 
-  # one permutation of treatment assignment.
 
   # Calculate the test statistic for each treatment assignment permutation
   # As nperm -> infinity, stat.null can approximate to the null distribution G0()
@@ -519,7 +500,7 @@ ci_sharp_greater <- function(
   f <- function(c) {
     pval <- pval_sharp(
       Z = Z, Y = Y, c = c, missing = missing, class = class, method.list = method.list,
-      stat.null = stat.null, Z.perm = Z.perm, nperm = nperm
+      stat.null = stat.null, Z.perm = NULL, nperm = nperm
     )
     return(pval - alpha)
   }
@@ -560,7 +541,7 @@ ci_sharp_greater <- function(
 #' @inheritParams pval_sharp
 #'
 #' @noRd
-check_input_pval_sharp <- function(Z, Y, missing, class, method.list, stat.null, Z.perm, nperm) {
+check_input_pval_sharp <- function(Z, Y, c, missing, class, method.list, stat.null, Z.perm, nperm) {
   if (is.null(Z) || !is.numeric(Z)) {
     stop("`Z` must be a numeric vector for the treatment.")
   }
@@ -582,6 +563,10 @@ check_input_pval_sharp <- function(Z, Y, missing, class, method.list, stat.null,
   }
   if (length(Y) != length(Z)) {
     stop("`Y` and `Z` must have the same length.")
+  }
+
+  if (!is.numeric(c) || !(length(c) == 1) || !is.finite(c)) {
+    stop("`c` must be a finite number.")
   }
 
   if (!(missing %in% c("general", "mp", "mn", "sharp", "random"))) {
@@ -612,6 +597,10 @@ check_input_pval_sharp <- function(Z, Y, missing, class, method.list, stat.null,
         (method.list$name == "Stephenson" && s != round(s))) {
       stop("`method.list$s` must be an integer >= 2 for 'Stephenson' and a number >= 1 for 'Polynomial'.")
     }
+    n.effective <- if (missing %in% c("sharp", "random")) sum(!is.na(Y)) else length(Y)
+    if (method.list$name == "Stephenson" && s > n.effective) {
+      stop("`method.list$s` must not exceed the number of units for 'Stephenson'.")
+    }
   }
 
   if (!is.null(stat.null) && !is.numeric(stat.null)) {
@@ -637,7 +626,7 @@ check_input_pval_sharp <- function(Z, Y, missing, class, method.list, stat.null,
 check_input_ci_sharp <- function(Z, Y, alternative, missing, class, method.list,
                                  stat.null, Z.perm, nperm, alpha, tol) {
   check_input_pval_sharp(
-    Z = Z, Y = Y, missing = missing, class = class, method.list = method.list,
+    Z = Z, Y = Y, c = 0, missing = missing, class = class, method.list = method.list,
     stat.null = stat.null, Z.perm = Z.perm, nperm = nperm
   )
   if (!(alternative %in% c("greater", "less", "two.sided"))) {
@@ -655,7 +644,7 @@ check_input_ci_sharp <- function(Z, Y, alternative, missing, class, method.list,
 
 #' Randomization test for sharp null hypotheses with missing outcomes
 #'
-#' `pval_sharp()` obtains the p-value for testing the sharp null hypothesis 
+#' `pval_sharp()` obtains the p-value for testing the sharp null hypothesis
 #' \eqn{H_0: \tau = c}.
 #'
 #' @param Z Treatment assignment (\eqn{n \times 1} vector).
@@ -686,9 +675,9 @@ check_input_ci_sharp <- function(Z, Y, alternative, missing, class, method.list,
 #' @param Z.perm A matrix that specifies the permuted assignments
 #' for approximating the null distribution of the test statistic.
 #' * if `Z.perm = NULL` (default), the function will calculate it internally.
-#' * if `missing = "general"`, `"mp"`, `"mn"`, then `Z.perm` is an 
+#' * if `missing = "general"`, `"mp"`, `"mn"`, then `Z.perm` is an
 #' \eqn{n \times nperm} matrix (\eqn{n} choose \eqn{n_1}).
-#' * if `missing = "sharp"`, `"random"`, then `Z.perm` is an 
+#' * if `missing = "sharp"`, `"random"`, then `Z.perm` is an
 #' \eqn{(n_{11} + n_{01}) \times nperm} matrix (\eqn{n_{11} + n_{01}} choose \eqn{n_{11}}).
 #' @param nperm A positive integer that specifies the number of permutations to
 #' approximate the randomization distribution of the test statistic.
@@ -700,7 +689,7 @@ pval_sharp <- function(
   stat.null = NULL, Z.perm = NULL, nperm = 10^4
 ) {
   check_input_pval_sharp(
-    Z = Z, Y = Y, missing = missing, class = class, method.list = method.list,
+    Z = Z, Y = Y, c = c, missing = missing, class = class, method.list = method.list,
     stat.null = stat.null, Z.perm = Z.perm, nperm = nperm
   )
   if (missing == "general") {
@@ -735,7 +724,7 @@ pval_sharp <- function(
 
 #' Confidence interval assuming constant treatment effect
 #'
-#' `ci_sharp()` obtains a one-sided or two-sided confidence interval for the 
+#' `ci_sharp()` obtains a one-sided or two-sided confidence interval for the
 #' constant individual effect.
 #'
 #' @inheritParams pval_sharp
@@ -745,11 +734,11 @@ pval_sharp <- function(
 #' * `alternative = "less"`: upper bound.
 #' * `alternative = "two.sided"`: (lower bound, upper bound).
 #' @param alpha A scalar, where \eqn{1-\alpha} indicates the confidence level.
-#' @param tol A numerical object that specifies the precision of the obtained 
-#' confidence intervals. For example, if `tol = 10^(-3)`, then the confidence 
+#' @param tol A numerical object that specifies the precision of the obtained
+#' confidence intervals. For example, if `tol = 10^(-3)`, then the confidence
 #' limits are precise up to 3 digits.
 #'
-#' @return The one-sided or two-sided confidence interval for the constant 
+#' @return The one-sided or two-sided confidence interval for the constant
 #' individual effect.
 #' * if `alternative = "greater"`, return the lower limit (a scalar).
 #' * if `alternative = "less"`, return the upper limit (a scalar).
