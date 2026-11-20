@@ -21,6 +21,7 @@ library(riattrition)
 ## Application: Lee (2009)
 
 ```{r, eval=FALSE}
+# Running time: 15 minutes
 result.list <- list()
 for (week in c(90, 135, 180)) {
   Z <- lee_2009[["treatmnt"]]
@@ -38,6 +39,7 @@ plot_sens(sens_pval = result.list$week90$sens_pval, output_file = "application_l
 ## Application: Chen and Yang (2019)
 
 ```{r, eval=FALSE}
+# Running time: 30 seconds
 Z <- chen_and_yang_2019$treatment_vpnnl
 Y <- chen_and_yang_2019$az_overall_a_w3
 result <- application_wrapper(Z = Z, Y = Y, seed = 1)
@@ -52,6 +54,7 @@ plot_sens(sens_pval = result$sens_pval, output_file = "application_chen_and_yang
 ## Application: Bursztyn et al (2020)
 
 ```{r, eval=FALSE}
+# Running time: 30 seconds
 Z <- bursztyn_et_al_2020$condition2
 Y <- bursztyn_et_al_2020$klk_index
 result <- application_wrapper(Z = Z, Y = Y, seed = 1)
@@ -66,6 +69,7 @@ plot_sens(sens_pval = result$sens_pval, output_file = "application_bursztyn_et_a
 ## Application: Noy and Zhang (2023)
 
 ```{r, eval=FALSE}
+# Running time: 30 seconds
 result.list <- list()
 # outcome 1
 Z <- noy_and_zhang_2023$treatment
