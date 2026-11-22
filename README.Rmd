@@ -27,7 +27,7 @@ The `riattrition` package provides a set of functions for conducting randomizati
 `riattrition` can be installed from its GitHub repository via
 
 ``` r
-devtools::install_github("peizansheng/riattrition")
+devtools::install_github("ripackages/riattrition")
 ```
 
 ## Main Functions

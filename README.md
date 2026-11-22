@@ -21,7 +21,7 @@ positive, monotone negative, sharp, and missing-at-random mechanisms.
 `riattrition` can be installed from its GitHub repository via
 
 ``` r
-devtools::install_github("peizansheng/riattrition")
+devtools::install_github("ripackages/riattrition")
 ```
 
 ## Main Functions
